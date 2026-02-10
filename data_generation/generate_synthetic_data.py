@@ -15,20 +15,30 @@ Faker.seed(42)
 np.random.seed(42)
 random.seed(42)
 
-NUM_CUSTOMERS = 5000
+NUM_CUSTOMERS = 25000
 TARGET_CHURN_RATE = 0.27
 CHURN_THRESHOLD_DAYS = 90
+ENGAGEMENT_DECAY_RATE = 0.15
 
 def generate_customers():
-    """Generate customer data with demographics and signup information."""
+    """Generate customer data with demographics, acquisition, and engagement information."""
     print("Generating customers data...")
     
     customers = []
     signup_start = datetime(2022, 1, 1)
     signup_end = datetime(2025, 6, 30)
     
+    acquisition_channels = ['Organic Search', 'Paid Search', 'Social Media', 'Referral', 'Email', 'Direct']
+    device_types = ['Desktop', 'Mobile', 'Tablet']
+    timezones = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 
+                 'America/Toronto', 'Europe/London', 'Asia/Tokyo']
+    
     for _ in range(NUM_CUSTOMERS):
         signup_date = fake.date_between(start_date=signup_start, end_date=signup_end)
+        if not isinstance(signup_date, datetime):
+            signup_date = datetime.combine(signup_date, datetime.min.time())
+        
+        acquisition_channel = np.random.choice(acquisition_channels, p=[0.25, 0.20, 0.20, 0.15, 0.10, 0.10])
         
         customer = {
             'customer_id': str(uuid.uuid4()),
@@ -40,7 +50,13 @@ def generate_customers():
             'signup_date': signup_date,
             'city': fake.city(),
             'state': fake.state_abbr(),
-            'segment': np.random.choice(['Consumer', 'Corporate', 'Home Office'], p=[0.6, 0.25, 0.15])
+            'segment': np.random.choice(['Consumer', 'Corporate', 'Home Office'], p=[0.6, 0.25, 0.15]),
+            'acquisition_channel': acquisition_channel,
+            'device_type': np.random.choice(device_types, p=[0.45, 0.45, 0.10]),
+            'timezone': np.random.choice(timezones),
+            'preferred_language': np.random.choice(['English', 'Spanish', 'French'], p=[0.80, 0.15, 0.05]),
+            'customer_lifetime_days': (datetime(2026, 2, 10) - signup_date).days,
+            'initial_referral_credits': np.random.randint(0, 51) if acquisition_channel == 'Referral' else 0
         }
         customers.append(customer)
     
@@ -90,7 +106,11 @@ def generate_subscriptions(customers_df):
         is_churned = np.random.random() < churn_prob
         
         if is_churned:
-            days_since_last_payment = np.random.randint(CHURN_THRESHOLD_DAYS + 1, min(tenure_days, 365))
+            max_days = min(tenure_days, 365)
+            if max_days <= CHURN_THRESHOLD_DAYS + 1:
+                days_since_last_payment = np.random.randint(max(1, tenure_days // 2), max(2, tenure_days))
+            else:
+                days_since_last_payment = np.random.randint(CHURN_THRESHOLD_DAYS + 1, max_days)
             last_payment_date = current_date - timedelta(days=days_since_last_payment)
             is_active = 0
         else:
@@ -113,6 +133,87 @@ def generate_subscriptions(customers_df):
     print(f"Generated {len(df)} subscriptions (Churn rate: {churn_rate:.2%})")
     return df
 
+def generate_behavioral_events(customers_df, subscriptions_df):
+    """Generate behavioral events for product analytics (logins, feature usage, support tickets)."""
+    print("Generating behavioral events data...")
+    
+    merged = customers_df.merge(subscriptions_df, on='customer_id')
+    events = []
+    current_date = datetime(2026, 2, 10)
+    
+    event_types = {
+        'login': 0.50,
+        'feature_browse': 0.15,
+        'feature_search': 0.10,
+        'feature_checkout': 0.08,
+        'feature_wishlist': 0.07,
+        'feature_review': 0.05,
+        'support_ticket': 0.03,
+        'app_crash': 0.02
+    }
+    
+    for _, customer in merged.iterrows():
+        signup_date = customer['signup_date']
+        if not isinstance(signup_date, datetime):
+            signup_date = datetime.combine(signup_date, datetime.min.time())
+        
+        is_churned = customer['is_active'] == 0
+        last_payment_date = customer['last_payment_date']
+        if not isinstance(last_payment_date, datetime):
+            last_payment_date = datetime.combine(last_payment_date, datetime.min.time())
+        
+        tenure_days = (current_date - signup_date).days
+        
+        if is_churned:
+            event_end_date = last_payment_date - timedelta(days=np.random.randint(0, min(30, tenure_days // 4)))
+            num_events = max(5, int(np.random.poisson(20)))
+        else:
+            event_end_date = current_date - timedelta(days=np.random.randint(0, 3))
+            base_events = max(10, tenure_days // 7)
+            num_events = int(np.random.poisson(base_events * 1.5))
+        
+        event_start_date = signup_date
+        
+        if not isinstance(event_start_date, datetime):
+            event_start_date = datetime.combine(event_start_date, datetime.min.time())
+        if not isinstance(event_end_date, datetime):
+            event_end_date = datetime.combine(event_end_date, datetime.min.time())
+        
+        if event_start_date > event_end_date:
+            event_start_date = event_end_date - timedelta(days=max(1, tenure_days // 3))
+        
+        for _ in range(num_events):
+            event_date = fake.date_between(
+                start_date=event_start_date,
+                end_date=event_end_date
+            )
+            if not isinstance(event_date, datetime):
+                event_date = datetime.combine(event_date, datetime.min.time())
+            
+            event_type = np.random.choice(
+                list(event_types.keys()),
+                p=list(event_types.values())
+            )
+            
+            session_duration_minutes = np.random.exponential(scale=12) if event_type == 'login' else None
+            if session_duration_minutes:
+                session_duration_minutes = min(session_duration_minutes, 120)
+            
+            event = {
+                'event_id': str(uuid.uuid4()),
+                'customer_id': customer['customer_id'],
+                'event_date': event_date,
+                'event_type': event_type,
+                'device_type': customer['device_type'],
+                'session_duration_minutes': round(session_duration_minutes, 2) if session_duration_minutes else None,
+                'pages_viewed': np.random.randint(1, 15) if event_type in ['login', 'feature_browse'] else None
+            }
+            events.append(event)
+    
+    df = pd.DataFrame(events)
+    print(f"Generated {len(df)} behavioral events")
+    return df
+
 def generate_transactions(customers_df, subscriptions_df):
     """Generate transaction data with realistic patterns for active and churned customers."""
     print("Generating transactions data...")
@@ -126,26 +227,41 @@ def generate_transactions(customers_df, subscriptions_df):
     
     for _, customer in merged.iterrows():
         signup_date = customer['signup_date']
+        if not isinstance(signup_date, datetime):
+            signup_date = datetime.combine(signup_date, datetime.min.time())
+        
         is_churned = customer['is_active'] == 0
         last_payment_date = customer['last_payment_date']
+        if not isinstance(last_payment_date, datetime):
+            last_payment_date = datetime.combine(last_payment_date, datetime.min.time())
         
         tenure_days = (current_date - signup_date).days
         
         if is_churned:
             num_transactions = max(1, int(np.random.poisson(5)))
-            transaction_end_date = last_payment_date - timedelta(days=np.random.randint(0, 60))
+            transaction_end_date = last_payment_date - timedelta(days=np.random.randint(0, min(60, tenure_days // 2)))
         else:
             base_transactions = max(1, tenure_days // 30)
             num_transactions = int(np.random.poisson(base_transactions * 0.8))
             transaction_end_date = current_date - timedelta(days=np.random.randint(0, 7))
         
-        transaction_start_date = max(signup_date, transaction_end_date - timedelta(days=tenure_days))
+        transaction_start_date = signup_date
+        
+        if not isinstance(transaction_start_date, datetime):
+            transaction_start_date = datetime.combine(transaction_start_date, datetime.min.time())
+        if not isinstance(transaction_end_date, datetime):
+            transaction_end_date = datetime.combine(transaction_end_date, datetime.min.time())
+        
+        if transaction_start_date > transaction_end_date:
+            transaction_start_date = transaction_end_date - timedelta(days=max(1, tenure_days // 2))
         
         for _ in range(num_transactions):
             transaction_date = fake.date_between(
                 start_date=transaction_start_date,
                 end_date=transaction_end_date
             )
+            if not isinstance(transaction_date, datetime):
+                transaction_date = datetime.combine(transaction_date, datetime.min.time())
             
             product_category = np.random.choice(product_categories)
             quantity = np.random.randint(1, 6)
@@ -187,6 +303,7 @@ def main():
     customers_df = generate_customers()
     subscriptions_df = generate_subscriptions(customers_df)
     transactions_df = generate_transactions(customers_df, subscriptions_df)
+    behavioral_events_df = generate_behavioral_events(customers_df, subscriptions_df)
     
     print("=" * 50)
     print("Saving data to CSV files...")
@@ -200,13 +317,18 @@ def main():
     transactions_df.to_csv('data_generation/transactions.csv', index=False)
     print(f"Saved transactions.csv ({len(transactions_df)} rows)")
     
+    behavioral_events_df.to_csv('data_generation/behavioral_events.csv', index=False)
+    print(f"Saved behavioral_events.csv ({len(behavioral_events_df)} rows)")
+    
     print("=" * 50)
     print("Data generation completed successfully!")
     print("\nSummary Statistics:")
     print(f"Total Customers: {len(customers_df)}")
     print(f"Total Transactions: {len(transactions_df)}")
+    print(f"Total Behavioral Events: {len(behavioral_events_df)}")
     print(f"Churn Rate: {(subscriptions_df['is_active'] == 0).sum() / len(subscriptions_df):.2%}")
     print(f"Avg Transactions per Customer: {len(transactions_df) / len(customers_df):.1f}")
+    print(f"Avg Events per Customer: {len(behavioral_events_df) / len(customers_df):.1f}")
 
 if __name__ == "__main__":
     main()

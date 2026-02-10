@@ -78,7 +78,13 @@ CREATE OR REPLACE TABLE CHURN_RAW.RAW.CUSTOMERS (
   signup_date DATE,
   city VARCHAR(100),
   state VARCHAR(10),
-  segment VARCHAR(50)
+  segment VARCHAR(50),
+  acquisition_channel VARCHAR(50),
+  device_type VARCHAR(50),
+  timezone VARCHAR(50),
+  preferred_language VARCHAR(50),
+  customer_lifetime_days INTEGER,
+  initial_referral_credits INTEGER
 );
 
 -- Raw transactions table
@@ -103,6 +109,17 @@ CREATE OR REPLACE TABLE CHURN_RAW.RAW.SUBSCRIPTIONS (
   is_active INTEGER
 );
 
+-- Raw behavioral events table
+CREATE OR REPLACE TABLE CHURN_RAW.RAW.BEHAVIORAL_EVENTS (
+  event_id VARCHAR(50),
+  customer_id VARCHAR(50),
+  event_date DATE,
+  event_type VARCHAR(50),
+  device_type VARCHAR(50),
+  session_duration_minutes DECIMAL(10, 2),
+  pages_viewed INTEGER
+);
+
 -- ============================================================================
 -- SECTION 5: DATA LOADING INSTRUCTIONS
 -- ============================================================================
@@ -113,6 +130,7 @@ CREATE OR REPLACE TABLE CHURN_RAW.RAW.SUBSCRIPTIONS (
 -- PUT file://c:/Users/admin/Documents/Github Repos/Customer_Churn_Project/data_generation/customers.csv @CHURN_RAW.RAW.CHURN_STAGE AUTO_COMPRESS=TRUE;
 -- PUT file://c:/Users/admin/Documents/Github Repos/Customer_Churn_Project/data_generation/transactions.csv @CHURN_RAW.RAW.CHURN_STAGE AUTO_COMPRESS=TRUE;
 -- PUT file://c:/Users/admin/Documents/Github Repos/Customer_Churn_Project/data_generation/subscriptions.csv @CHURN_RAW.RAW.CHURN_STAGE AUTO_COMPRESS=TRUE;
+-- PUT file://c:/Users/admin/Documents/Github Repos/Customer_Churn_Project/data_generation/behavioral_events.csv @CHURN_RAW.RAW.CHURN_STAGE AUTO_COMPRESS=TRUE;
 
 -- STEP 2: Verify files are in the stage
 -- LIST @CHURN_RAW.RAW.CHURN_STAGE;
@@ -136,6 +154,12 @@ FILE_FORMAT = (FORMAT_NAME = 'CHURN_RAW.RAW.CSV_FORMAT')
 ON_ERROR = 'CONTINUE'
 PURGE = TRUE;
 
+COPY INTO CHURN_RAW.RAW.BEHAVIORAL_EVENTS
+FROM @CHURN_RAW.RAW.CHURN_STAGE/behavioral_events.csv.gz
+FILE_FORMAT = (FORMAT_NAME = 'CHURN_RAW.RAW.CSV_FORMAT')
+ON_ERROR = 'CONTINUE'
+PURGE = TRUE;
+
 -- ============================================================================
 -- SECTION 6: DATA VALIDATION
 -- ============================================================================
@@ -145,7 +169,9 @@ SELECT 'CUSTOMERS' AS table_name, COUNT(*) AS row_count FROM CHURN_RAW.RAW.CUSTO
 UNION ALL
 SELECT 'TRANSACTIONS' AS table_name, COUNT(*) AS row_count FROM CHURN_RAW.RAW.TRANSACTIONS
 UNION ALL
-SELECT 'SUBSCRIPTIONS' AS table_name, COUNT(*) AS row_count FROM CHURN_RAW.RAW.SUBSCRIPTIONS;
+SELECT 'SUBSCRIPTIONS' AS table_name, COUNT(*) AS row_count FROM CHURN_RAW.RAW.SUBSCRIPTIONS
+UNION ALL
+SELECT 'BEHAVIORAL_EVENTS' AS table_name, COUNT(*) AS row_count FROM CHURN_RAW.RAW.BEHAVIORAL_EVENTS;
 
 -- Check for null customer_ids
 SELECT 
@@ -164,12 +190,19 @@ SELECT
   'SUBSCRIPTIONS' AS table_name, 
   COUNT(*) AS null_customer_ids 
 FROM CHURN_RAW.RAW.SUBSCRIPTIONS 
+WHERE customer_id IS NULL
+UNION ALL
+SELECT 
+  'BEHAVIORAL_EVENTS' AS table_name, 
+  COUNT(*) AS null_customer_ids 
+FROM CHURN_RAW.RAW.BEHAVIORAL_EVENTS 
 WHERE customer_id IS NULL;
 
 -- Preview sample data
 SELECT * FROM CHURN_RAW.RAW.CUSTOMERS LIMIT 5;
 SELECT * FROM CHURN_RAW.RAW.TRANSACTIONS LIMIT 5;
 SELECT * FROM CHURN_RAW.RAW.SUBSCRIPTIONS LIMIT 5;
+SELECT * FROM CHURN_RAW.RAW.BEHAVIORAL_EVENTS LIMIT 5;
 
 -- ============================================================================
 -- SECTION 7: GRANT PERMISSIONS (OPTIONAL)

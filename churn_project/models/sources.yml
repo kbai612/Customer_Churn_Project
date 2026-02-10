@@ -74,3 +74,24 @@ sources:
               - not_null
               - accepted_values:
                   values: [0, 1]
+      
+      - name: behavioral_events
+        description: Raw behavioral events capturing customer engagement and product usage
+        columns:
+          - name: event_id
+            description: Unique identifier for each event
+            tests:
+              - not_null
+              - unique
+          - name: customer_id
+            description: Foreign key to customers table
+            tests:
+              - not_null
+          - name: event_date
+            description: Date when the event occurred
+            tests:
+              - not_null
+          - name: event_type
+            description: Type of event (login, feature_usage, support_ticket, etc.)
+            tests:
+              - not_null

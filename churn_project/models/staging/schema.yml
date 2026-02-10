@@ -127,3 +127,33 @@ models:
           - not_null
           - accepted_values:
               values: [0, 1]
+  
+  - name: stg_behavioral_events
+    description: Staged behavioral event data capturing customer engagement and product usage
+    columns:
+      - name: event_id
+        description: Unique identifier for each event
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to customers
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: event_date
+        description: Date when the event occurred
+        tests:
+          - not_null
+      - name: event_type
+        description: Type of event (login, feature_usage, etc.)
+        tests:
+          - not_null
+      - name: device_type
+        description: Device used for the event
+      - name: session_duration_minutes
+        description: Session duration in minutes (for login events)
+      - name: pages_viewed
+        description: Number of pages viewed in the session

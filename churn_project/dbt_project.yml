@@ -20,16 +20,12 @@ models:
   churn_project:
     staging:
       +materialized: view
-      +schema: analytics
     dimensions:
       +materialized: table
-      +schema: analytics
     facts:
       +materialized: table
-      +schema: analytics
     marts:
       +materialized: table
-      +schema: analytics
 
 vars:
   churn_threshold_days: 90

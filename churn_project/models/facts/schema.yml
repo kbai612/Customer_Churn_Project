@@ -109,3 +109,26 @@ models:
         description: Contract type
       - name: monthly_charges
         description: Monthly subscription charges
+  
+  - name: fact_behavioral_metrics
+    description: Aggregated behavioral metrics and engagement data at customer level
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: total_events
+        description: Total number of behavioral events
+      - name: active_days
+        description: Number of days with at least one event
+      - name: login_count
+        description: Total number of login events
+      - name: feature_usage_count
+        description: Total number of feature usage events
+      - name: engagement_rate
+        description: Ratio of active days to engagement span
+      - name: days_since_last_event
+        description: Days since last behavioral event
+      - name: events_last_30_days
+        description: Number of events in the last 30 days

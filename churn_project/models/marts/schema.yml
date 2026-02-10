@@ -81,3 +81,45 @@ models:
         description: Contract type
       - name: monthly_charges
         description: Monthly subscription charges
+  
+  - name: cohort_retention_analysis
+    description: Detailed cohort retention analysis with month-over-month retention rates
+    columns:
+      - name: cohort_month
+        description: Month when cohort signed up
+        tests:
+          - not_null
+      - name: month_number
+        description: Number of months since cohort signup
+        tests:
+          - not_null
+      - name: retention_rate_pct
+        description: Percentage of original cohort still active
+  
+  - name: product_analytics_funnel
+    description: Product analytics funnel showing customer journey and feature adoption
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: funnel_stage_reached
+        description: Highest funnel stage customer reached
+      - name: feature_adoption_segment
+        description: Customer segment based on feature usage
+  
+  - name: revenue_at_risk_analysis
+    description: Financial impact analysis of customer churn and revenue at risk
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: revenue_at_risk
+        description: Estimated revenue at risk based on churn probability
+      - name: customer_value_tier
+        description: Customer value classification
+      - name: priority_retention_flag
+        description: Flag for high-value at-risk customers requiring priority attention

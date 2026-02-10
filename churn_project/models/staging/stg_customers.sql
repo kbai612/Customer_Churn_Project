@@ -9,7 +9,13 @@ WITH source AS (
         signup_date,
         city,
         state,
-        segment
+        segment,
+        acquisition_channel,
+        device_type,
+        timezone,
+        preferred_language,
+        customer_lifetime_days,
+        initial_referral_credits
     FROM {{ source('churn_raw', 'customers') }}
 )
 
@@ -23,6 +29,12 @@ SELECT
     signup_date::DATE AS signup_date,
     TRIM(city) AS city,
     TRIM(state) AS state,
-    TRIM(segment) AS segment
+    TRIM(segment) AS segment,
+    TRIM(acquisition_channel) AS acquisition_channel,
+    TRIM(device_type) AS device_type,
+    TRIM(timezone) AS timezone,
+    TRIM(preferred_language) AS preferred_language,
+    customer_lifetime_days,
+    initial_referral_credits
 FROM source
 WHERE customer_id IS NOT NULL
