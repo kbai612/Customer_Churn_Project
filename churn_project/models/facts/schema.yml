@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: fact_transactions
+    description: Transaction fact table with temporal attributes for analysis
+    columns:
+      - name: transaction_id
+        description: Unique identifier for each transaction
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to dim_customers
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: transaction_date
+        description: Date of the transaction
+        tests:
+          - not_null
+      - name: day_of_week
+        description: Day of week as number (1=Sunday, 7=Saturday)
+      - name: day_name
+        description: Name of the day
+      - name: transaction_month
+        description: Month number of transaction
+      - name: transaction_year
+        description: Year of transaction
+      - name: transaction_month_date
+        description: First day of transaction month
+      - name: product_category
+        description: Category of product purchased
+        tests:
+          - not_null
+      - name: quantity
+        description: Number of items purchased
+        tests:
+          - not_null
+      - name: unit_price
+        description: Price per unit
+        tests:
+          - not_null
+      - name: total_amount
+        description: Total transaction amount
+        tests:
+          - not_null
+      - name: payment_method
+        description: Method of payment used
+        tests:
+          - not_null
+
+  - name: fact_churn
+    description: Core churn fact table with RFM metrics and churn indicators
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: churn_flag
+        description: Binary churn indicator (1=churned, 0=active)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      - name: recency_days
+        description: Number of days since last transaction
+      - name: frequency
+        description: Total number of transactions (RFM Frequency)
+      - name: monetary
+        description: Total amount spent (RFM Monetary)
+      - name: total_transactions
+        description: Total number of transactions per customer
+      - name: last_transaction_date
+        description: Date of most recent transaction
+      - name: first_transaction_date
+        description: Date of first transaction
+      - name: total_spent
+        description: Total amount spent by customer
+      - name: avg_transaction_value
+        description: Average transaction value
+      - name: days_since_last_transaction
+        description: Number of days since last transaction
+      - name: tenure_months
+        description: Number of months since signup
+        tests:
+          - not_null
+      - name: tenure_days
+        description: Number of days since signup
+        tests:
+          - not_null
+      - name: cohort_month
+        description: Signup month cohort
+        tests:
+          - not_null
+      - name: age_group
+        description: Age group category
+        tests:
+          - not_null
+      - name: segment
+        description: Customer segment
+        tests:
+          - not_null
+      - name: plan_type
+        description: Subscription plan type
+      - name: contract_type
+        description: Contract type
+      - name: monthly_charges
+        description: Monthly subscription charges

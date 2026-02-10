@@ -1,0 +1,76 @@
+version: 2
+
+sources:
+  - name: churn_raw
+    database: CHURN_RAW
+    schema: RAW
+    description: Raw data landing zone for customer churn data
+    tables:
+      - name: customers
+        description: Raw customer demographic and signup information
+        columns:
+          - name: customer_id
+            description: Unique identifier for each customer
+            tests:
+              - not_null
+              - unique
+          - name: email
+            description: Customer email address
+            tests:
+              - not_null
+          - name: signup_date
+            description: Date when customer signed up
+            tests:
+              - not_null
+      
+      - name: transactions
+        description: Raw transaction records for all customer purchases
+        columns:
+          - name: transaction_id
+            description: Unique identifier for each transaction
+            tests:
+              - not_null
+              - unique
+          - name: customer_id
+            description: Foreign key to customers table
+            tests:
+              - not_null
+          - name: transaction_date
+            description: Date of the transaction
+            tests:
+              - not_null
+          - name: total_amount
+            description: Total amount of the transaction
+            tests:
+              - not_null
+      
+      - name: subscriptions
+        description: Raw subscription details for each customer
+        columns:
+          - name: customer_id
+            description: Foreign key to customers table
+            tests:
+              - not_null
+              - unique
+          - name: plan_type
+            description: Type of subscription plan
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['Basic', 'Standard', 'Premium']
+          - name: contract_type
+            description: Type of contract commitment
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['Month-to-month', 'One year', 'Two year']
+          - name: last_payment_date
+            description: Date of last payment received
+            tests:
+              - not_null
+          - name: is_active
+            description: Whether subscription is currently active
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [0, 1]

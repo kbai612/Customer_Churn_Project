@@ -1,0 +1,129 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Staged customer data with cleaned and standardized fields
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: first_name
+        description: Customer first name
+        tests:
+          - not_null
+      - name: last_name
+        description: Customer last name
+        tests:
+          - not_null
+      - name: email
+        description: Customer email address (lowercased)
+        tests:
+          - not_null
+      - name: age
+        description: Customer age in years
+        tests:
+          - not_null
+      - name: gender
+        description: Customer gender
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Male', 'Female', 'Other']
+      - name: signup_date
+        description: Date when customer signed up
+        tests:
+          - not_null
+      - name: city
+        description: Customer city
+      - name: state
+        description: Customer state abbreviation
+      - name: segment
+        description: Customer segment classification
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Consumer', 'Corporate', 'Home Office']
+
+  - name: stg_transactions
+    description: Staged transaction data with cleaned and standardized fields
+    columns:
+      - name: transaction_id
+        description: Unique identifier for each transaction
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to customers
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: transaction_date
+        description: Date of the transaction
+        tests:
+          - not_null
+      - name: product_category
+        description: Category of product purchased
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Electronics', 'Clothing', 'Groceries', 'Home', 'Sports']
+      - name: quantity
+        description: Number of items purchased
+        tests:
+          - not_null
+      - name: unit_price
+        description: Price per unit
+        tests:
+          - not_null
+      - name: total_amount
+        description: Total transaction amount
+        tests:
+          - not_null
+      - name: payment_method
+        description: Method of payment used
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Credit', 'Debit', 'Cash', 'Digital Wallet']
+
+  - name: stg_subscriptions
+    description: Staged subscription data with cleaned and standardized fields
+    columns:
+      - name: customer_id
+        description: Foreign key to customers
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: plan_type
+        description: Type of subscription plan
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Basic', 'Standard', 'Premium']
+      - name: monthly_charges
+        description: Monthly subscription charges
+        tests:
+          - not_null
+      - name: contract_type
+        description: Type of contract commitment
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Month-to-month', 'One year', 'Two year']
+      - name: last_payment_date
+        description: Date of last payment received
+        tests:
+          - not_null
+      - name: is_active
+        description: Whether subscription is currently active (0=churned, 1=active)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]

@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: Customer dimension with demographics, subscription details, and calculated attributes
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: first_name
+        description: Customer first name
+        tests:
+          - not_null
+      - name: last_name
+        description: Customer last name
+        tests:
+          - not_null
+      - name: email
+        description: Customer email address
+        tests:
+          - not_null
+      - name: age
+        description: Customer age in years
+        tests:
+          - not_null
+      - name: age_group
+        description: Age group category
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['18-25', '26-35', '36-45', '46-55', '56+']
+      - name: gender
+        description: Customer gender
+        tests:
+          - not_null
+      - name: signup_date
+        description: Date when customer signed up
+        tests:
+          - not_null
+      - name: cohort_month
+        description: Month when customer signed up (for cohort analysis)
+        tests:
+          - not_null
+      - name: tenure_months
+        description: Number of months since signup
+        tests:
+          - not_null
+      - name: tenure_days
+        description: Number of days since signup
+        tests:
+          - not_null
+      - name: city
+        description: Customer city
+      - name: state
+        description: Customer state
+      - name: segment
+        description: Customer segment classification
+        tests:
+          - not_null
+      - name: plan_type
+        description: Type of subscription plan
+      - name: monthly_charges
+        description: Monthly subscription charges
+      - name: contract_type
+        description: Type of contract commitment
+      - name: last_payment_date
+        description: Date of last payment received
+      - name: is_active
+        description: Whether subscription is currently active

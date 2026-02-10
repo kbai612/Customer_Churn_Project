@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: churn_features
+    description: Analytics-ready churn features with RFM scoring, segmentation, and retention recommendations
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: churn_flag
+        description: Binary churn indicator (1=churned, 0=active)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      - name: recency_days
+        description: Number of days since last transaction (lower is better)
+      - name: frequency
+        description: Total number of transactions (higher is better)
+      - name: monetary
+        description: Total amount spent (higher is better)
+      - name: recency_score
+        description: RFM recency score (1-5, 5 is best meaning most recent)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: frequency_score
+        description: RFM frequency score (1-5, 5 is best meaning most frequent)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: monetary_score
+        description: RFM monetary score (1-5, 5 is best meaning highest spend)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: rfm_segment
+        description: Customer segment based on RFM scores
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Champions', 'Loyal Customers', 'New Customers', 'Potential Loyalists', 
+                       'Promising', 'At Risk', 'Cant Lose Them', 'Lost High Value', 
+                       'Need Attention', 'Hibernating', 'Lost', 'Other']
+      - name: rfm_composite_score
+        description: Weighted composite RFM score for ranking
+        tests:
+          - not_null
+      - name: churn_risk_score
+        description: Churn risk score (0-100, higher means higher risk)
+        tests:
+          - not_null
+      - name: recommended_action
+        description: Recommended retention action based on customer segment and risk
+        tests:
+          - not_null
+      - name: estimated_lifetime_value
+        description: Estimated customer lifetime value
+        tests:
+          - not_null
+      - name: age_group
+        description: Age group category
+        tests:
+          - not_null
+      - name: cohort_month
+        description: Signup month cohort
+        tests:
+          - not_null
+      - name: segment
+        description: Customer business segment
+        tests:
+          - not_null
+      - name: plan_type
+        description: Subscription plan type
+      - name: contract_type
+        description: Contract type
+      - name: monthly_charges
+        description: Monthly subscription charges
