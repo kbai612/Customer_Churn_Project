@@ -57,35 +57,41 @@ The project simulates a realistic customer base and provides a reproducible fram
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph generation [Data Generation]
         PY[generate_synthetic_data.py]
     end
 
     subgraph snowflake [Snowflake Data Warehouse]
-        subgraph raw [CHURN_RAW.RAW]
+        subgraph raw [CHURN_RAW.RAW - Raw Tables]
             RC[customers]
             RT[transactions]
             RS[subscriptions]
+            RBE[behavioral_events]
         end
 
         subgraph staging [Staging Layer - Views]
             SC[stg_customers]
             ST[stg_transactions]
             SS[stg_subscriptions]
+            SBE[stg_behavioral_events]
         end
 
-        subgraph dims [Dimensions - Tables]
+        subgraph dims [Dimensions Layer - Tables]
             DC[dim_customers]
         end
 
-        subgraph facts [Facts - Tables]
+        subgraph facts [Facts Layer - Tables]
             FT[fact_transactions]
             FC[fact_churn]
+            FBM[fact_behavioral_metrics]
         end
 
-        subgraph marts [Marts - Tables]
+        subgraph marts [Marts Layer - Tables]
             CF[churn_features]
+            CRA[cohort_retention_analysis]
+            PAF[product_analytics_funnel]
+            RAR[revenue_at_risk_analysis]
         end
     end
 
@@ -93,17 +99,39 @@ flowchart LR
         APP[app.py]
     end
 
-    PY -->|CSVs| raw
+    PY -->|4 CSV files| raw
+    
     RC --> SC
     RT --> ST
     RS --> SS
+    RBE --> SBE
+    
     SC --> DC
     SS --> DC
+    
     ST --> FT
     DC --> FC
     FT --> FC
+    
+    SBE --> FBM
+    
     FC --> CF
+    FBM --> CF
+    DC --> CF
+    
+    DC --> CRA
+    FT --> CRA
+    
+    DC --> PAF
+    SBE --> PAF
+    
+    CF --> RAR
+    FT --> RAR
+    
     CF --> APP
+    CRA --> APP
+    PAF --> APP
+    RAR --> APP
 ```
 
 ## Tech Stack
