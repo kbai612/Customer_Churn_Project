@@ -51,45 +51,53 @@ Customer churn is a critical challenge for retail businesses. This project addre
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart TB
-    PY[Python: generate_synthetic_data.py]
-    
-    subgraph RAW[Raw Layer]
-        R1[customers<br/>transactions<br/>subscriptions<br/>behavioral_events]
+flowchart LR
+    subgraph generation [Data Generation]
+        PY[generate_synthetic_data.py]
     end
-    
-    subgraph STAGING[Staging Layer]
-        S1[stg_customers<br/>stg_transactions<br/>stg_subscriptions<br/>stg_behavioral_events]
+
+    subgraph snowflake [Snowflake Data Warehouse]
+        subgraph raw [CHURN_RAW.RAW]
+            RC[customers]
+            RT[transactions]
+            RS[subscriptions]
+        end
+
+        subgraph staging [Staging Layer - Views]
+            SC[stg_customers]
+            ST[stg_transactions]
+            SS[stg_subscriptions]
+        end
+
+        subgraph dims [Dimensions - Tables]
+            DC[dim_customers]
+        end
+
+        subgraph facts [Facts - Tables]
+            FT[fact_transactions]
+            FC[fact_churn]
+        end
+
+        subgraph marts [Marts - Tables]
+            CF[churn_features]
+        end
     end
-    
-    subgraph CORE[Core Layer]
-        D1[dim_customers]
-        F1[fact_transactions]
-        F2[fact_churn]
-        F3[fact_behavioral_metrics]
+
+    subgraph viz [Streamlit Dashboard]
+        APP[app.py]
     end
-    
-    subgraph MARTS[Marts Layer - Analytics]
-        M1[churn_features]
-        M2[cohort_retention_analysis]
-        M3[product_analytics_funnel]
-        M4[revenue_at_risk_analysis]
-    end
-    
-    DASH[Streamlit Dashboard]
-    
-    PY -->|Load CSVs| RAW
-    RAW --> STAGING
-    STAGING --> CORE
-    CORE --> MARTS
-    MARTS --> DASH
-    
-    style PY fill:#e1f5ff
-    style RAW fill:#fff3e0
-    style STAGING fill:#f3e5f5
-    style CORE fill:#e8f5e9
-    style MARTS fill:#fff9c4
-    style DASH fill:#fce4ec
+
+    PY -->|CSVs| raw
+    RC --> SC
+    RT --> ST
+    RS --> SS
+    SC --> DC
+    SS --> DC
+    ST --> FT
+    DC --> FC
+    FT --> FC
+    FC --> CF
+    CF --> APP
 ```
 
 ## Tech Stack
