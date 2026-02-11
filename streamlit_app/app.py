@@ -10,6 +10,20 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import snowflake.connector
 from datetime import datetime
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+try:
+    from ml.predict import (
+        load_best_model, load_model_metrics, load_feature_importance,
+        get_model_comparison, predict_churn, explain_prediction_shap
+    )
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    print("ML module not available. Train models first using ml/train_model.py")
 
 st.set_page_config(
     page_title="Retention Intelligence Report",
@@ -623,6 +637,230 @@ def display_at_risk_table(df):
         hide_index=True
     )
 
+def create_model_comparison_chart():
+    """Create model comparison chart from saved metrics."""
+    if not ML_AVAILABLE:
+        st.warning("ML models not available. Train models first.")
+        return None
+    
+    comparison = get_model_comparison()
+    if comparison is None:
+        st.warning("No model comparison data found. Train models using ml/train_model.py")
+        return None
+    
+    metrics_to_plot = ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc', 'pr_auc']
+    
+    fig = go.Figure()
+    
+    for metric in metrics_to_plot:
+        if metric in comparison.columns:
+            fig.add_trace(go.Bar(
+                name=metric.upper().replace('_', ' '),
+                x=comparison['model_name'],
+                y=comparison[metric],
+                text=comparison[metric].round(3),
+                texttemplate='%{text}',
+                textposition='outside'
+            ))
+    
+    fig.update_layout(
+        title='Model Performance Comparison',
+        xaxis_title='Model',
+        yaxis_title='Score',
+        barmode='group',
+        height=450,
+        plot_bgcolor='#1a1d23',
+        paper_bgcolor='#1a1d23',
+        font=dict(color='#8b92a0', family='JetBrains Mono', size=10),
+        title_font=dict(size=13, color='#f8f9fa', family='Newsreader'),
+        xaxis=dict(gridcolor='#252830', showgrid=False),
+        yaxis=dict(gridcolor='#252830', showgrid=True, zeroline=False, range=[0, 1]),
+        legend=dict(
+            bgcolor='#16181d',
+            bordercolor='#252830',
+            borderwidth=1,
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1
+        ),
+        margin=dict(l=60, r=20, t=80, b=60)
+    )
+    
+    return fig
+
+def create_feature_importance_chart(model_name='xgboost', top_n=15):
+    """Create feature importance chart from SHAP values."""
+    if not ML_AVAILABLE:
+        return None
+    
+    importance_df = load_feature_importance(model_name)
+    if importance_df is None:
+        st.warning(f"Feature importance not found for {model_name}")
+        return None
+    
+    importance_df = importance_df.head(top_n).sort_values('importance', ascending=True)
+    
+    fig = go.Figure(go.Bar(
+        x=importance_df['importance'],
+        y=importance_df['feature'],
+        orientation='h',
+        marker=dict(
+            color=importance_df['importance'],
+            colorscale=[[0, '#252830'], [0.5, '#ff6b35'], [1, '#f7931e']],
+            line=dict(width=0)
+        ),
+        text=importance_df['importance'].round(4),
+        texttemplate='%{text}',
+        textposition='outside',
+        textfont=dict(size=10, color='#f8f9fa')
+    ))
+    
+    fig.update_layout(
+        title=f'Top {top_n} Most Important Features (SHAP)',
+        xaxis_title='Mean Absolute SHAP Value',
+        yaxis_title='',
+        height=500,
+        plot_bgcolor='#1a1d23',
+        paper_bgcolor='#1a1d23',
+        font=dict(color='#8b92a0', family='JetBrains Mono', size=10),
+        title_font=dict(size=13, color='#f8f9fa', family='Newsreader'),
+        xaxis=dict(gridcolor='#252830', showgrid=True, zeroline=False),
+        yaxis=dict(gridcolor='#252830', showgrid=False),
+        margin=dict(l=160, r=60, t=60, b=60)
+    )
+    
+    return fig
+
+def display_ml_predictions_section(df):
+    """Display ML predictions and explanations section."""
+    st.markdown("---")
+    st.subheader("Machine Learning Predictions")
+    
+    if not ML_AVAILABLE:
+        st.warning("ML module not available. Install ML dependencies and train models first.")
+        st.code("pip install -r requirements.txt")
+        st.code("python ml/train_model.py path/to/churn_features.csv")
+        return
+    
+    comparison = get_model_comparison()
+    if comparison is None:
+        st.warning("No trained models found. Train models first using ml/train_model.py")
+        return
+    
+    st.markdown("*Advanced machine learning models trained on behavioral and transactional features*")
+    
+    model_tabs = st.tabs(["Model Performance", "Feature Importance", "Model Comparison"])
+    
+    with model_tabs[0]:
+        st.markdown("#### Best Model Performance")
+        
+        best_model_name = comparison.iloc[0]['model_name']
+        best_model_key = best_model_name.lower().replace(' ', '_')
+        
+        metrics = load_model_metrics(best_model_key)
+        if metrics:
+            perf_col1, perf_col2, perf_col3, perf_col4 = st.columns(4)
+            
+            with perf_col1:
+                st.metric("Model", best_model_name)
+            
+            with perf_col2:
+                st.metric("ROC-AUC", f"{metrics['roc_auc']:.4f}")
+            
+            with perf_col3:
+                st.metric("Precision", f"{metrics['precision']:.4f}")
+            
+            with perf_col4:
+                st.metric("Recall", f"{metrics['recall']:.4f}")
+            
+            st.markdown("")
+            
+            perf_col5, perf_col6, perf_col7, perf_col8 = st.columns(4)
+            
+            with perf_col5:
+                st.metric("Accuracy", f"{metrics['accuracy']:.4f}")
+            
+            with perf_col6:
+                st.metric("F1-Score", f"{metrics['f1_score']:.4f}")
+            
+            with perf_col7:
+                st.metric("PR-AUC", f"{metrics['pr_auc']:.4f}")
+            
+            with perf_col8:
+                cv_mean = metrics.get('cv_mean', 0)
+                st.metric("CV Score", f"{cv_mean:.4f}")
+            
+            st.markdown("#### Confusion Matrix")
+            cm = metrics.get('confusion_matrix', [[0, 0], [0, 0]])
+            cm_df = pd.DataFrame(
+                cm,
+                index=['Actual: Not Churned', 'Actual: Churned'],
+                columns=['Predicted: Not Churned', 'Predicted: Churned']
+            )
+            st.dataframe(cm_df, use_container_width=True)
+            
+            st.markdown("#### Model Insights")
+            st.markdown(f"""
+            - **True Negatives**: {cm[0][0]:,} customers correctly identified as not churning
+            - **True Positives**: {cm[1][1]:,} customers correctly identified as churning
+            - **False Positives**: {cm[0][1]:,} customers incorrectly flagged as churning
+            - **False Negatives**: {cm[1][0]:,} churning customers missed by the model
+            """)
+    
+    with model_tabs[1]:
+        st.markdown("#### Feature Importance Analysis")
+        st.markdown("*Based on SHAP (SHapley Additive exPlanations) values showing which features drive churn predictions*")
+        
+        model_selector = st.selectbox(
+            "Select Model for Feature Importance",
+            ['xgboost', 'random_forest', 'logistic_regression'],
+            format_func=lambda x: x.replace('_', ' ').title()
+        )
+        
+        fig = create_feature_importance_chart(model_selector, top_n=15)
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+            
+            importance_df = load_feature_importance(model_selector)
+            if importance_df is not None:
+                st.markdown("#### Top 10 Features Explanation")
+                top_10 = importance_df.head(10)
+                for idx, row in top_10.iterrows():
+                    st.markdown(f"**{idx+1}. {row['feature']}**: Impact score {row['importance']:.4f}")
+    
+    with model_tabs[2]:
+        st.markdown("#### Model Comparison")
+        
+        fig = create_model_comparison_chart()
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+        
+        if comparison is not None:
+            st.markdown("#### Detailed Comparison")
+            display_cols = ['model_name', 'accuracy', 'precision', 'recall', 
+                          'f1_score', 'roc_auc', 'pr_auc']
+            available_cols = [col for col in display_cols if col in comparison.columns]
+            st.dataframe(
+                comparison[available_cols].round(4),
+                use_container_width=True,
+                hide_index=True
+            )
+            
+            st.markdown("#### Model Selection Rationale")
+            best_model = comparison.iloc[0]
+            st.markdown(f"""
+            **Best Model: {best_model['model_name']}**
+            
+            Selected based on ROC-AUC score of **{best_model['roc_auc']:.4f}**, which indicates:
+            - Strong ability to distinguish between churning and non-churning customers
+            - Balanced performance across precision ({best_model['precision']:.2%}) and recall ({best_model['recall']:.2%})
+            - Robust cross-validation performance
+            
+            *This model is now used for churn probability scoring in production.*
+            """)
+
 def main():
     """Main application function."""
     st.markdown(f'<p style="font-family: JetBrains Mono; font-size: 0.7rem; color: #5a6070; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.1em;">Report Generated: {datetime.now().strftime("%B %d, %Y — %H:%M")}</p>', unsafe_allow_html=True)
@@ -714,6 +952,8 @@ schema = "ANALYTICS"
         st.markdown(f"*{at_risk_count:,} customers identified as high-risk and requiring immediate intervention*")
         
         display_at_risk_table(filtered_df)
+        
+        display_ml_predictions_section(filtered_df)
         
         st.markdown("---")
         st.subheader("Financial Impact Analysis")
