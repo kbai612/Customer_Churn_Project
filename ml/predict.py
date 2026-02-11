@@ -9,7 +9,9 @@ import pickle
 import os
 import json
 
-ARTIFACTS_DIR = 'ml/artifacts'
+# Resolve artifacts path relative to this file so it works when app runs from streamlit_app/
+_ML_DIR = os.path.dirname(os.path.abspath(__file__))
+ARTIFACTS_DIR = os.path.join(_ML_DIR, 'artifacts')
 
 
 def load_model(model_name='xgboost'):

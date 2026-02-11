@@ -183,7 +183,8 @@ pip install -r requirements.txt
 ```sql
 COPY INTO @CHURN_RAW.RAW.CHURN_STAGE/churn_features.csv
 FROM CHURN_ANALYTICS.ANALYTICS.churn_features
-FILE_FORMAT = (TYPE = CSV HEADER = TRUE)
+FILE_FORMAT = (TYPE = CSV COMPRESSION = NONE)
+HEADER = TRUE
 SINGLE = TRUE;
 ```
 

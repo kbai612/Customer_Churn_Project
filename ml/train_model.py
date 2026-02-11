@@ -10,6 +10,12 @@ import json
 import os
 from datetime import datetime
 
+# Set matplotlib backend to Agg (non-GUI) to avoid tkinter threading issues on Windows
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
@@ -20,8 +26,6 @@ from sklearn.metrics import (
 )
 import xgboost as xgb
 import shap
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from data_prep import prepare_data_pipeline, save_preprocessors
 
@@ -218,18 +222,38 @@ def generate_shap_analysis(model, X_train, X_test, feature_names, model_name, ma
     if model_name == 'XGBoost':
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X_test)
+        # For binary classification, XGBoost returns values for positive class
+        if isinstance(shap_values, list):
+            shap_values = shap_values[1]
     elif model_name == 'Random Forest':
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X_test)
+        # For binary classification, extract positive class SHAP values
         if isinstance(shap_values, list):
             shap_values = shap_values[1]
     else:
+        # Logistic Regression - use smaller sample for KernelExplainer
         sample_size = min(100, len(X_train))
         X_train_sample = shap.sample(X_train, sample_size, random_state=RANDOM_STATE)
         explainer = shap.KernelExplainer(model.predict_proba, X_train_sample)
+        # Only explain first 100 test samples for speed
         shap_values = explainer.shap_values(X_test[:100])
         if isinstance(shap_values, list):
             shap_values = shap_values[1]
+        # Trim X_test to match
+        X_test = X_test[:100]
+    
+    # Ensure SHAP values are 2D array
+    if len(shap_values.shape) == 1:
+        shap_values = shap_values.reshape(-1, 1)
+    
+    # Validate shapes match
+    print(f"SHAP values shape: {shap_values.shape}")
+    print(f"X_test shape: {X_test.shape}")
+    
+    if shap_values.shape[0] != X_test.shape[0]:
+        print(f"WARNING: Shape mismatch! Trimming X_test to match SHAP values")
+        X_test = X_test.iloc[:shap_values.shape[0]]
     
     shap_values_df = pd.DataFrame(shap_values, columns=feature_names)
     feature_importance = pd.DataFrame({
@@ -245,7 +269,7 @@ def generate_shap_analysis(model, X_train, X_test, feature_names, model_name, ma
     os.makedirs(output_dir, exist_ok=True)
     
     plt.figure(figsize=(10, 8))
-    shap.summary_plot(shap_values, X_test, feature_names=feature_names, 
+    shap.summary_plot(shap_values, X_test.values, feature_names=feature_names, 
                       max_display=max_display, show=False)
     plt.tight_layout()
     plt.savefig(f"{output_dir}/shap_summary_plot.png", dpi=300, bbox_inches='tight')
@@ -253,7 +277,7 @@ def generate_shap_analysis(model, X_train, X_test, feature_names, model_name, ma
     plt.close()
     
     plt.figure(figsize=(10, 8))
-    shap.summary_plot(shap_values, X_test, feature_names=feature_names, 
+    shap.summary_plot(shap_values, X_test.values, feature_names=feature_names, 
                       plot_type='bar', max_display=max_display, show=False)
     plt.tight_layout()
     plt.savefig(f"{output_dir}/shap_feature_importance.png", dpi=300, bbox_inches='tight')

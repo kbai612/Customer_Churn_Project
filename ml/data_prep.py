@@ -108,7 +108,12 @@ def load_data_from_csv(csv_path):
     Returns:
         pd.DataFrame: Raw data
     """
-    df = pd.read_csv(csv_path)
+    # Auto-detect compression (handles .gz files automatically)
+    df = pd.read_csv(csv_path, compression='infer', encoding='utf-8')
+    
+    # Normalize column names to lowercase (Snowflake exports uppercase)
+    df.columns = df.columns.str.lower()
+    
     return df
 
 
@@ -284,6 +289,15 @@ def prepare_data_pipeline(data_source, credentials=None, csv_path=None,
         raise ValueError("data_source must be 'snowflake' or 'csv'")
     
     print(f"Loaded {len(df)} records")
+    
+    # Check if target column exists
+    if TARGET_COLUMN not in df.columns:
+        print(f"\nERROR: Target column '{TARGET_COLUMN}' not found!")
+        print(f"Available columns ({len(df.columns)}): {', '.join(df.columns.tolist()[:20])}")
+        if len(df.columns) > 20:
+            print(f"... and {len(df.columns) - 20} more columns")
+        raise ValueError(f"Target column '{TARGET_COLUMN}' not found in dataset. Check that you exported the correct table.")
+    
     print(f"Churn rate: {df[TARGET_COLUMN].mean():.2%}")
     
     X, y, feature_names, encoders = prepare_features(df)
