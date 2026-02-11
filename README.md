@@ -106,7 +106,7 @@ flowchart LR
     CF --> APP
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Data Warehouse**: Snowflake (cloud-based SQL data warehouse)
 - **Data Transformation**: dbt Core (data build tool)
@@ -114,7 +114,7 @@ flowchart LR
 - **Visualization**: Streamlit + Plotly
 - **Version Control**: Git
 
-## 📊 Data Model
+## Data Model
 
 ### Source Data (Raw Layer)
 - **customers**: 25,000 customers with demographics, acquisition channels, and device preferences
@@ -169,7 +169,7 @@ flowchart LR
   - Retention ROI calculations
   - Priority retention flagging
 
-## 🚀 Setup Instructions
+## Setup Instructions
 
 ### Prerequisites
 - Python 3.9 or higher
@@ -281,7 +281,7 @@ streamlit run app.py
 
 4. Open browser to `http://localhost:8501`
 
-## 📈 Key Features
+## Key Features
 
 ### Dashboard Components
 
@@ -342,45 +342,45 @@ streamlit run app.py
    - Acquisition channel
    - Risk category
 
-## 🎓 Skills Demonstrated
+## Skills Demonstrated
 
 ### Data Engineering
-- ✅ ELT pipeline design (Extract, Load, Transform)
-- ✅ Dimensional modeling (star schema)
-- ✅ Data quality testing and validation
-- ✅ SQL optimization for analytics
+- ELT pipeline design (Extract, Load, Transform)
+- Dimensional modeling (star schema)
+- Data quality testing and validation
+- SQL optimization for analytics
 
 ### Data Transformation (dbt)
-- ✅ Staging layer for data cleaning
-- ✅ Dimensional and fact table modeling
-- ✅ Marts for business logic
-- ✅ Custom macros and tests
-- ✅ Documentation and lineage
+- Staging layer for data cleaning
+- Dimensional and fact table modeling
+- Marts for business logic
+- Custom macros and tests
+- Documentation and lineage
 
 ### Analytics & Business Intelligence
-- ✅ RFM analysis for customer segmentation
-- ✅ Multi-factor churn prediction (behavioral + transactional)
-- ✅ Advanced cohort analysis with retention curves
-- ✅ Customer lifetime value estimation with engagement factors
-- ✅ Product analytics funnel analysis
-- ✅ Feature adoption tracking
-- ✅ Engagement scoring and segmentation
-- ✅ Revenue at risk quantification
-- ✅ Retention ROI modeling
+- RFM analysis for customer segmentation
+- Multi-factor churn prediction (behavioral + transactional)
+- Advanced cohort analysis with retention curves
+- Customer lifetime value estimation with engagement factors
+- Product analytics funnel analysis
+- Feature adoption tracking
+- Engagement scoring and segmentation
+- Revenue at risk quantification
+- Retention ROI modeling
 
 ### Data Visualization
-- ✅ Interactive dashboards with Streamlit
-- ✅ Plotly charts for data exploration
-- ✅ KPI design and presentation
-- ✅ User-friendly filtering and navigation
+- Interactive dashboards with Streamlit
+- Plotly charts for data exploration
+- KPI design and presentation
+- User-friendly filtering and navigation
 
 ### Software Engineering
-- ✅ Python programming
-- ✅ Version control with Git
-- ✅ Virtual environment management
-- ✅ Documentation and README
+- Python programming
+- Version control with Git
+- Virtual environment management
+- Documentation and README
 
-## 📊 Key Insights & Findings
+## Key Insights & Findings
 
 ### Churn Patterns Discovered
 
@@ -427,7 +427,7 @@ streamlit run app.py
    - Mobile users have 15% higher engagement but similar churn (device-agnostic issue)
    - **Recommendation**: Engagement monitoring with real-time alerts at 14-day inactivity
 
-## 🎯 Retention Strategies
+## Retention Strategies
 
 Based on the enhanced analysis, here are data-driven retention strategies:
 
@@ -474,7 +474,7 @@ Based on the enhanced analysis, here are data-driven retention strategies:
 - Time-limited feature challenges
 - Community engagement invites
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Customer_Churn_Project/
@@ -527,7 +527,7 @@ Customer_Churn_Project/
 └── assets/
 ```
 
-## 🔗 References
+## References
 
 - [dbt Documentation](https://docs.getdbt.com)
 - [Snowflake Documentation](https://docs.snowflake.com)
