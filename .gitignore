@@ -76,3 +76,8 @@ assets/*.png
 assets/*.jpg
 assets/*.gif
 !assets/.gitkeep
+
+# Markdown files
+HOW_TO_INTERPRET_ML_RESULTS.md
+ML_ANALYSIS_AND_RECOMMENDATIONS.md
+SAMPLE_ML_RESULTS_REPORT.md
